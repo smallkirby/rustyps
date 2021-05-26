@@ -202,9 +202,8 @@ pub fn arg_type(arg: &String) -> ArgType {
 pub fn arg_parse(args: Vec<String>) -> Result<LinkedList<Box<SelectionNode>>, String> {
   let mut selection_list = LinkedList::new();
   match parse_all_options(&args) {
-    Ok(list) => {
-      let mut tmp = list;
-      selection_list.append(&mut tmp);
+    Ok(mut list) => {
+      selection_list.append(&mut list);
     }
     Err(msg) => return Err(msg),
   };
@@ -231,9 +230,8 @@ pub fn parse_all_options(args: &Vec<String>) -> Result<LinkedList<Box<SelectionN
         ArgType::ArgGnu => {
           log::trace!("{}: type ArgGnu", arg);
           match parse_gnu_option(arg) {
-            Ok(list) => {
-              let mut tmp = list;
-              selection_list.append(&mut tmp);
+            Ok(mut list) => {
+              selection_list.append(&mut list);
               log::trace!("parse_all_options: {:?}", selection_list);
             },
             Err(msg) => return Err(msg),
@@ -314,9 +312,8 @@ mod tests {
       typecode: super::SelectionListType::SelPid,
     });
     match super::arg_parse(args) {
-      Ok(list) => {
-        let mut tmp = list;
-        assert_eq!(tmp.pop_front().unwrap(), b0);
+      Ok(mut list) => {
+        assert_eq!(list.pop_front().unwrap(), b0);
       },
       Err(msg) => panic!(msg),
     }
@@ -336,10 +333,9 @@ mod tests {
       typecode: super::SelectionListType::SelPid,
     });
     match super::arg_parse(args) {
-      Ok(list) => {
-        let mut tmp = list;
-        assert_eq!(tmp.pop_front().unwrap(), b0);
-        assert_eq!(tmp.pop_front().unwrap(), b1);
+      Ok(mut list) => {
+        assert_eq!(list.pop_front().unwrap(), b0);
+        assert_eq!(list.pop_front().unwrap(), b1);
       },
       Err(msg) => panic!(msg),
     }
