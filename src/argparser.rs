@@ -2,6 +2,7 @@
 pub struct PsParser{
   args: Vec<String>,
   curargix: usize,
+  thread_flags: Vec<ThreadFlag>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -14,7 +15,7 @@ struct PidSelection {
   pid: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArgType {
   GNU,
   SYSV,
@@ -25,9 +26,25 @@ pub enum ArgType {
   FAIL,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum ThreadFlag {
+  B_H,
+  B_m,
+  U_m,
+  U_T,
+  U_L,
+  SHOW_PROC,
+  SHOW_TASK,
+  SHOW_BOTH,
+  LOOSE_TASKS,
+  NO_SORT,
+  NO_FOREST,
+  MUST_USE,
+}
+
 impl PsParser {
   pub fn from(args: std::env::Args) -> PsParser {
-    PsParser{curargix: 0, args: args.collect()}
+    PsParser{curargix: 0, args: args.collect(), thread_flags: vec![]}
   }
 
   // main function of parser
@@ -36,8 +53,11 @@ impl PsParser {
       Ok(list) => list,
       Err(msg) => return Err(msg),
     };
+    match self.thread_option_check() {
+      Ok(_) => log::trace!("thread option updated"),
+      Err(msg) => return Err(msg),
+    };
     return Ok(option_nodes);
-    //return Err(String::from("not imp"));
   }
 
   // parse all options and get list of SelectionNode. can be called only once.
@@ -150,6 +170,14 @@ impl PsParser {
     return f(&vals);
   }
 
+  pub fn thread_option_check(&mut self) -> Result<(), String>{
+    if self.thread_flags.len() == 0 {
+      self.thread_flags.push(ThreadFlag::SHOW_PROC);
+      return Ok(());
+    }
+    return Err(String::from("thread option: not imp"));
+  }
+
 }
 
 pub fn arg_type(arg: &String) -> ArgType {
@@ -219,18 +247,22 @@ mod tests{
     let parser0 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid=33")],
       curargix: 0,
+      thread_flags: vec![],
     };
     let parser1 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid=33,44,55")],
       curargix: 0,
+      thread_flags: vec![],
     };
     let parser2 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid:33,44,55")],
       curargix: 0,
+      thread_flags: vec![],
     };
     let parser3 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid"), String::from("33,44,55")],
       curargix: 0,
+      thread_flags: vec![],
     };
     let b0 = vec![
       super::SelectionNode::PID(super::PidSelection{pid: 33}),
