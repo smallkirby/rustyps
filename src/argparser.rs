@@ -4,12 +4,12 @@ pub struct PsParser{
   curargix: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SelectionNode {
   PID(PidSelection),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct PidSelection {
   pid: u64,
 }
@@ -32,12 +32,17 @@ impl PsParser {
 
   // main function of parser
   pub fn parse(mut self) -> Result<Vec<SelectionNode>, String> {
-    let option_nodes = self.parse_all_options();
-    return Err(String::from("not imp"));
+    let option_nodes = match self.parse_all_options() {
+      Ok(list) => list,
+      Err(msg) => return Err(msg),
+    };
+    return Ok(option_nodes);
+    //return Err(String::from("not imp"));
   }
 
   // parse all options and get list of SelectionNode. can be called only once.
   pub fn parse_all_options(&mut self) -> Result<Vec<SelectionNode>, String> {
+    let mut selection_list: Vec<SelectionNode> = vec![];
     self.curargix = 1;
     while self.curargix < self.args.len() {
       log::trace!("arg: {}", self.args[self.curargix]);
@@ -45,7 +50,10 @@ impl PsParser {
       match arg_type(&self.args[self.curargix]) {
         ArgType::GNU  =>  {
           log::trace!("GNU type arg: {}", &self.args[self.curargix]);
-          self.parse_gnu_option();
+          match self.parse_gnu_option() {
+            Ok(mut list) => selection_list.append(&mut list),              
+            Err(msg) => return Err(msg),
+          }
         },
         _ => {
           unimplemented!();
@@ -54,7 +62,7 @@ impl PsParser {
 
       self.curargix += 1;
     }
-    return Err(String::from("not imp"));
+    return Ok(selection_list);
   }
 
   // parse GNU options.
@@ -90,7 +98,7 @@ impl PsParser {
       return Err(String::from("unknown gnu long option"));
     }
 
-    return Err(String::from("not imp"))
+    return Ok(selection_list);
   }
 
   // get GNU type arg value
@@ -202,4 +210,39 @@ pub fn parse_pid(vals: &Vec<String>) -> Option<Vec<SelectionNode>> {
     ));
   }
   return Some(selection_list);
+}
+
+#[cfg(test)]
+mod tests{
+  #[test]
+  fn parser_gnu_pid() {
+    let parser0 = super::PsParser{
+      args: vec![String::from("me"), String::from("--pid=33")],
+      curargix: 0,
+    };
+    let parser1 = super::PsParser{
+      args: vec![String::from("me"), String::from("--pid=33,44,55")],
+      curargix: 0,
+    };
+    let parser2 = super::PsParser{
+      args: vec![String::from("me"), String::from("--pid:33,44,55")],
+      curargix: 0,
+    };
+    let parser3 = super::PsParser{
+      args: vec![String::from("me"), String::from("--pid"), String::from("33,44,55")],
+      curargix: 0,
+    };
+    let b0 = vec![
+      super::SelectionNode::PID(super::PidSelection{pid: 33}),
+    ];
+    let b1 = vec![
+      super::SelectionNode::PID(super::PidSelection{pid: 33}),
+      super::SelectionNode::PID(super::PidSelection{pid: 44}),
+      super::SelectionNode::PID(super::PidSelection{pid: 55}),
+    ];
+    assert_eq!(parser0.parse().unwrap(), b0);
+    assert_eq!(parser1.parse().unwrap(), b1);
+    assert_eq!(parser2.parse().unwrap(), b1);
+    assert_eq!(parser3.parse().unwrap(), b1);
+  }
 }
