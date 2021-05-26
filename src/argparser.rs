@@ -3,6 +3,22 @@ pub struct PsParser{
   args: Vec<String>,
   curargix: usize,
   thread_flags: Vec<ThreadFlag>,
+  select_bits: u32,
+  simple_select: u32,
+  screen_cols: u32,
+  w_count: u32,
+}
+
+impl Default for PsParser {
+  fn default() -> Self { Self {
+    args: vec![],
+    curargix: 0,
+    thread_flags: vec![],
+    select_bits: 0,
+    simple_select: 0,
+    screen_cols: 0,
+    w_count: 211,
+  }}
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,17 +60,46 @@ pub enum ThreadFlag {
 
 impl PsParser {
   pub fn from(args: std::env::Args) -> PsParser {
-    PsParser{curargix: 0, args: args.collect(), thread_flags: vec![]}
+    PsParser{
+      curargix: 0, 
+      args: args.collect(), 
+      thread_flags: vec![],
+      ..Default::default()
+    }
   }
 
   // main function of parser
+  // replacement of 'arg_parse()
   pub fn parse(mut self) -> Result<Vec<SelectionNode>, String> {
+    let selection_nodes = match self.arg_parse() {
+      Ok(list) => list,
+      Err(msg) => return Err(msg),
+    };
+    self.arg_check_conflicts();
+
+    log::trace!("===== ps output follows ====");
+    self.init_output();
+    self.lists_and_needs();
+    self.simple_spew();
+
+    return Ok(selection_nodes);
+  }
+
+  pub fn arg_parse(&mut self) -> Result<Vec<SelectionNode>, String> {
     let option_nodes = match self.parse_all_options() {
       Ok(list) => list,
       Err(msg) => return Err(msg),
     };
     match self.thread_option_check() {
       Ok(_) => log::trace!("thread option updated"),
+      Err(msg) => return Err(msg),
+    };
+    match self.process_sf_options() {
+      Ok(_) => log::trace!("process sf option updated"),
+      Err(msg) => return Err(msg),
+    };
+    match self.choose_dimensions() {
+      Ok(_) => log::trace!("dimensions updated"),
       Err(msg) => return Err(msg),
     };
     return Ok(option_nodes);
@@ -170,6 +215,7 @@ impl PsParser {
     return f(&vals);
   }
 
+  // XXX
   pub fn thread_option_check(&mut self) -> Result<(), String>{
     if self.thread_flags.len() == 0 {
       self.thread_flags.push(ThreadFlag::SHOW_PROC);
@@ -178,6 +224,43 @@ impl PsParser {
     return Err(String::from("thread option: not imp"));
   }
 
+  // XXX
+  pub fn process_sf_options(&mut self) -> Result<(), String>{
+    if self.simple_select == 0 {
+      self.select_bits = 0xaa00;
+      return Ok(());
+    }
+    return Err(String::from("thread option: not imp"));
+  }
+
+  pub fn choose_dimensions(&mut self) -> Result<(), String>{
+    if self.w_count != 1 && (self.screen_cols < 132) {
+      self.screen_cols = 132;
+    }
+    if self.w_count > 1 {
+      self.screen_cols = 2 * 64*1024 * 1;
+    }
+    return Ok(());
+  }
+
+  // XXX
+  pub fn arg_check_conflicts(&mut self) {
+    return;
+  }
+
+  // XXX
+  pub fn init_output(&mut self) {
+
+  }
+
+  // XXX
+  pub fn lists_and_needs(&mut self) {
+    
+  }
+
+  pub fn simple_spew(&mut self) {
+    
+  }
 }
 
 pub fn arg_type(arg: &String) -> ArgType {
@@ -248,21 +331,25 @@ mod tests{
       args: vec![String::from("me"), String::from("--pid=33")],
       curargix: 0,
       thread_flags: vec![],
+      ..Default::default()
     };
     let parser1 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid=33,44,55")],
       curargix: 0,
       thread_flags: vec![],
+      ..Default::default()
     };
     let parser2 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid:33,44,55")],
       curargix: 0,
       thread_flags: vec![],
+      ..Default::default()
     };
     let parser3 = super::PsParser{
       args: vec![String::from("me"), String::from("--pid"), String::from("33,44,55")],
       curargix: 0,
       thread_flags: vec![],
+      ..Default::default()
     };
     let b0 = vec![
       super::SelectionNode::PID(super::PidSelection{pid: 33}),

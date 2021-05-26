@@ -14,7 +14,6 @@ impl Ps {
     }
   }
   fn run(self) -> i32 {
-    log::trace!("{:?}", self.parser.parse());
     0
   }
 }
