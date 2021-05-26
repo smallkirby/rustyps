@@ -1,7 +1,23 @@
 mod argparser;
 
 use simple_logger::SimpleLogger;
-use std::env;
+
+#[derive(Debug)]
+struct Ps {
+  parser: argparser::PsParser,
+}
+
+impl Ps {
+  fn new() -> Ps {
+    Ps {
+      parser: argparser::PsParser::from(std::env::args()),
+    }
+  }
+  fn run(self) -> i32 {
+    log::trace!("{:?}", self.parser.parse());
+    0
+  }
+}
 
 fn main() {
     SimpleLogger::new()
@@ -13,11 +29,12 @@ fn main() {
     /* */
 
     let myname = std::env::current_exe();
-    log::trace!("{:?}", myname);
+    //log::trace!("{:?}", myname);
 
     // XXX must set sighandlers
     /* */
-    argparser::arg_parse(env::args().collect());
+    let ps = Ps::new();
+    ps.run();
 }
 
 pub fn do_help(opt: String, rc: i32) {
