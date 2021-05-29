@@ -320,6 +320,20 @@ mod tests {
   }
 
   #[test]
+  fn simple_nextpid_iterate_all() {
+    let mut pt = super::openproc(0, None, None).unwrap();
+    let mut count = 0;
+    loop {
+      match super::simple_nextpid(&mut pt) {
+        Some(p) => count += 1,
+        None => break,
+      };
+    }
+    println!("[+] found {} procs", count);
+    assert_eq!(count > 1, true);
+  }
+
+  #[test]
   fn test_stat2proc() {
     let stat = String::from("1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107 9649 0 0 4 0 4 5 20 0 1 0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0 0 65536 3670020 1266777851 1 0 0 17 3 0 0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791 140735920754666 0");
     let mut p = super::PROCT {
