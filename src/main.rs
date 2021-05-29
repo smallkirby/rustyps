@@ -4,18 +4,18 @@ use simple_logger::SimpleLogger;
 
 #[derive(Debug)]
 struct Ps {
-  parser: argparser::PsParser,
+    parser: argparser::PsParser,
 }
 
 impl Ps {
-  fn new() -> Ps {
-    Ps {
-      parser: argparser::PsParser::from(std::env::args()),
+    fn new() -> Ps {
+        Ps {
+            parser: argparser::PsParser::from(std::env::args()),
+        }
     }
-  }
-  fn run(self) -> i32 {
-    0
-  }
+    fn run(self) -> i32 {
+        0
+    }
 }
 
 fn main() {
