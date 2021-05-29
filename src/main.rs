@@ -1,4 +1,5 @@
 mod argparser;
+mod display;
 
 use simple_logger::SimpleLogger;
 
@@ -13,9 +14,25 @@ impl Ps {
       parser: argparser::PsParser::from(std::env::args()),
     }
   }
-  fn run(self) -> i32 {
-    0
+  pub fn run(&mut self) -> i32 {
+    self.arg_check_conflicts();
+
+    log::trace!("===== ps output follows ====");
+    self.init_output();
+    self.lists_and_needs();
+    display::simple_spew();
+    return 0;
   }
+
+  // XXX
+  pub fn arg_check_conflicts(&mut self) {
+    return;
+  }
+  // XXX
+  pub fn init_output(&mut self) {}
+
+  // XXX
+  pub fn lists_and_needs(&mut self) {}
 }
 
 fn main() {
@@ -32,7 +49,7 @@ fn main() {
 
   // XXX must set sighandlers
   /* */
-  let ps = Ps::new();
+  let mut ps = Ps::new();
   ps.run();
 }
 
