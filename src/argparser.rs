@@ -1,12 +1,14 @@
 #[derive(Debug)]
 pub struct PsParser {
-  args: Vec<String>,
-  curargix: usize,
-  thread_flags: Vec<ThreadFlag>,
-  select_bits: u32,
-  simple_select: u32,
-  screen_cols: u32,
-  w_count: u32,
+  pub args: Vec<String>,
+  pub curargix: usize,
+  pub thread_flags: Vec<ThreadFlag>,
+  pub select_bits: u32,
+  pub simple_select: bool,
+  pub screen_cols: u32,
+  pub w_count: u32,
+  pub all_process: bool,
+  pub selection_list: Vec<SelectionNode>,
 }
 
 impl Default for PsParser {
@@ -16,9 +18,11 @@ impl Default for PsParser {
       curargix: 0,
       thread_flags: vec![],
       select_bits: 0,
-      simple_select: 0,
+      simple_select: false,
       screen_cols: 0,
       w_count: 211,
+      all_process: false,
+      selection_list: vec![],
     }
   }
 }
@@ -29,8 +33,8 @@ pub enum SelectionNode {
 }
 
 #[derive(Debug, PartialEq)]
-struct PidSelection {
-  pid: u64,
+pub struct PidSelection {
+  pub pid: Vec<i32>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -232,11 +236,12 @@ impl PsParser {
 
   // XXX
   pub fn process_sf_options(&mut self) -> Result<(), String> {
-    if self.simple_select == 0 {
-      self.select_bits = 0xaa00;
-      return Ok(());
-    }
-    return Err(String::from("thread option: not imp"));
+    Ok(())
+    //if self.simple_select {
+    //  self.select_bits = 0xaa00;
+    //  return Ok(());
+    //}
+    //return Err(String::from("thread option: not imp"));
   }
 
   pub fn choose_dimensions(&mut self) -> Result<(), String> {
@@ -290,11 +295,12 @@ pub fn arg_type(arg: &String) -> ArgType {
 pub fn parse_pid(vals: &Vec<String>) -> Option<Vec<SelectionNode>> {
   let mut selection_list: Vec<SelectionNode> = vec![];
   for val in vals {
-    let n = match val.parse::<u64>() {
+    let n = match val.parse::<i32>() {
+      // XXX should be able to parse 1,2,3
       Ok(_n) => _n,
       Err(_) => return None,
     };
-    selection_list.push(SelectionNode::PID(PidSelection { pid: n }));
+    selection_list.push(SelectionNode::PID(PidSelection { pid: vec![n] }));
   }
   return Some(selection_list);
 }
@@ -331,11 +337,13 @@ mod tests {
       thread_flags: vec![],
       ..Default::default()
     };
-    let b0 = vec![super::SelectionNode::PID(super::PidSelection { pid: 33 })];
+    let b0 = vec![super::SelectionNode::PID(super::PidSelection {
+      pid: vec![33],
+    })];
     let b1 = vec![
-      super::SelectionNode::PID(super::PidSelection { pid: 33 }),
-      super::SelectionNode::PID(super::PidSelection { pid: 44 }),
-      super::SelectionNode::PID(super::PidSelection { pid: 55 }),
+      super::SelectionNode::PID(super::PidSelection { pid: vec![33] }),
+      super::SelectionNode::PID(super::PidSelection { pid: vec![44] }),
+      super::SelectionNode::PID(super::PidSelection { pid: vec![55] }),
     ];
     assert_eq!(parser0.parse().unwrap(), b0);
     assert_eq!(parser1.parse().unwrap(), b1);

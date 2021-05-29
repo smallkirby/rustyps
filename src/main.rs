@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate scan_fmt;
 
-mod argparser;
-mod display;
-mod readproc;
+pub mod argparser;
+pub mod display;
+pub mod readproc;
 
 use simple_logger::SimpleLogger;
 

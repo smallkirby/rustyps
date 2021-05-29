@@ -1,6 +1,9 @@
+use std::convert::TryInto;
 use std::os;
 use std::os::unix::fs::MetadataExt;
 use std::path;
+
+use crate::argparser;
 
 type pid_t = i32;
 type uid_t = i32;
@@ -139,12 +142,34 @@ pub fn openproc(
 
 pub fn readproc(pt: &mut PROCTAB) -> Option<PROCT> {
   loop {
-    let p = match pt.finder.unwrap()(pt) {
+    let mut p = match pt.finder.unwrap()(pt) {
       Some(_p) => _p,
       None => return None,
     };
+    match pt.reader.unwrap()(&pt, &mut p) {
+      Some(()) => return Some(p),
+      None => continue,
+    }
   }
-  None // XXX
+}
+
+pub fn want_this_proc(p: &PROCT, parser: &argparser::PsParser) -> bool {
+  let mut proc_is_wanted = false;
+  if !parser.all_process {
+    // use table for -a a d g x
+    if parser.simple_select || parser.selection_list.len() == 0 {
+      if table_accept() {
+        unimplemented!();
+      }
+    } else {
+      // search lists
+      if proc_was_listed(&p, &parser) {
+        proc_is_wanted = true;
+      }
+    }
+  }
+  // finish
+  return proc_is_wanted;
 }
 
 // return None if the proc file does no more exist.
@@ -305,6 +330,33 @@ pub fn stat2proc(s: &String, p: &mut PROCT) -> Result<(), String> {
   Ok(())
 }
 
+pub fn table_accept() -> bool {
+  unimplemented!();
+}
+
+pub fn proc_was_listed(p: &PROCT, parser: &argparser::PsParser) -> bool {
+  let sn = &parser.selection_list;
+  if sn.len() == 0 {
+    false
+  } else {
+    for snode in sn {
+      match snode {
+        argparser::SelectionNode::PID(pid_selection) => {
+          for pid in pid_selection.pid.iter() {
+            if p.tgid == *pid {
+              return true;
+            }
+          }
+        }
+        _ => {
+          unimplemented!();
+        }
+      }
+    }
+    false
+  }
+}
+
 #[cfg(test)]
 mod tests {
   #[test]
@@ -329,7 +381,6 @@ mod tests {
         None => break,
       };
     }
-    println!("[+] found {} procs", count);
     assert_eq!(count > 1, true);
   }
 
@@ -342,5 +393,27 @@ mod tests {
     super::stat2proc(&stat, &mut p).unwrap();
     assert_eq!(p.cmd, "bash");
     assert_eq!(p.session, 1504081);
+  }
+
+  #[test]
+  fn want_this_proc_single_pid() {
+    use crate::argparser;
+    let p1 = super::PROCT {
+      tgid: 3,
+      ..Default::default()
+    };
+    let p2 = super::PROCT {
+      tgid: 4,
+      ..Default::default()
+    };
+    let selection_list = vec![argparser::SelectionNode::PID(argparser::PidSelection {
+      pid: vec![3],
+    })];
+    let psparser = argparser::PsParser {
+      selection_list: selection_list,
+      ..Default::default()
+    };
+    assert_eq!(super::want_this_proc(&p1, &psparser), true);
+    assert_eq!(super::want_this_proc(&p2, &psparser), false);
   }
 }
