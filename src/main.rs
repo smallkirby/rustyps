@@ -1,5 +1,6 @@
 mod argparser;
 mod display;
+mod readproc;
 
 use simple_logger::SimpleLogger;
 
