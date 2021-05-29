@@ -76,9 +76,11 @@ impl PsParser {
 
   // main function of parser
   // replacement of 'arg_parse()
-  pub fn parse(mut self) -> Result<Vec<SelectionNode>, String> {
+  pub fn parse(&mut self) -> Result<Vec<SelectionNode>, String> {
     match self.arg_parse() {
-      Ok(list) => Ok(list),
+      Ok(list) => {
+        Ok(list)
+      },
       Err(msg) => Err(msg),
     }
   }

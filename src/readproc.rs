@@ -2,29 +2,30 @@ use std::convert::TryInto;
 use std::os;
 use std::os::unix::fs::MetadataExt;
 use std::path;
+use std::io::Read;
 
 use crate::argparser;
 
 type pid_t = i32;
 type uid_t = i32;
 
-const PROC_FILLMEM: u64 = 0x1;
-const PROC_FILLCOM: u64 = 0x2;
-const PROC_FILLENV: u64 = 0x4;
-const PROC_FILLUSER: u64 = 0x8;
+pub const PROC_FILLMEM: u64 = 0x1;
+pub const PROC_FILLCOM: u64 = 0x2;
+pub const PROC_FILLENV: u64 = 0x4;
+pub const PROC_FILLUSER: u64 = 0x8;
 
-const PROC_FILLGRP: u64 = 0x10;
-const PROC_FILLSTATUS: u64 = 0x20;
-const PROC_FILLSTAT: u64 = 0x40;
-const PROC_FILLARG: u64 = 0x100;
-const PROC_FILLCGROUP: u64 = 0x200;
+pub const PROC_FILLGRP: u64 = 0x10;
+pub const PROC_FILLSTATUS: u64 = 0x20;
+pub const PROC_FILLSTAT: u64 = 0x40;
+pub const PROC_FILLARG: u64 = 0x100;
+pub const PROC_FILLCGROUP: u64 = 0x200;
 
-const PROC_PID: u64 = 0x1000;
-const PROC_UID: u64 = 0x4000;
+pub const PROC_PID: u64 = 0x1000;
+pub const PROC_UID: u64 = 0x4000;
 
-const PROC_FILLNS: u64 = 0x8000;
-const PROC_FILLSYSTEMD: u64 = 0x80000;
-const PROC_FILL_LXC: u64 = 0x80000;
+pub const PROC_FILLNS: u64 = 0x8000;
+pub const PROC_FILLSYSTEMD: u64 = 0x80000;
+pub const PROC_FILL_LXC: u64 = 0x80000;
 
 #[derive(Debug, PartialEq)]
 pub enum ProcState {
@@ -51,64 +52,64 @@ impl Default for ProcState {
 #[derive(Debug, Default, PartialEq)]
 pub struct PROCT {
   // all the information about proc
-  tgid: i32, // thread group ID
-  tid: i32,  // thread ID
-  pathname: String,
-  euid: u32, // effective uid
-  egid: u32, // effective gid
-  state: ProcState,
-  ppid: u32,
-  pgrp: u32,
-  session: u32,
-  tty: u32,
-  tpgid: u32,
-  flags: u64,
-  min_flt: u64,
-  cmin_flt: u64,
-  maj_flt: u64,
-  cmaj_flt: u64,
-  utime: u64,
-  stime: u64,
-  cutime: u64,
-  cstime: u64,
-  priority: u64,
-  nice: u64,
-  nlwp: u64,
-  alarm: u64,
-  start_time: u64,
-  vsize: u64,
-  rss: u64,
-  rss_rlim: u64,
-  start_code: u64,
-  end_code: u64,
-  start_stack: u64,
-  kstk_esp: u64,
-  kstk_eip: u64,
-  wchan: u64,
-  exit_signal: u64,
-  processor: u64,
-  rtprio: u64,
-  sched: u64,
-  cmd: String,
+  pub tgid: i32, // thread group ID
+  pub tid: i32,  // thread ID
+  pub pathname: String,
+  pub euid: u32, // effective uid
+  pub egid: u32, // effective gid
+  pub state: ProcState,
+  pub ppid: u32,
+  pub pgrp: u32,
+  pub session: u32,
+  pub tty: u32,
+  pub tpgid: u32,
+  pub flags: u64,
+  pub min_flt: u64,
+  pub cmin_flt: u64,
+  pub maj_flt: u64,
+  pub cmaj_flt: u64,
+  pub utime: u64,
+  pub stime: u64,
+  pub cutime: u64,
+  pub cstime: u64,
+  pub priority: u64,
+  pub nice: u64,
+  pub nlwp: u64,
+  pub alarm: u64,
+  pub start_time: u64,
+  pub vsize: u64,
+  pub rss: u64,
+  pub rss_rlim: u64,
+  pub start_code: u64,
+  pub end_code: u64,
+  pub start_stack: u64,
+  pub kstk_esp: u64,
+  pub kstk_eip: u64,
+  pub wchan: u64,
+  pub exit_signal: u64,
+  pub processor: u64,
+  pub rtprio: u64,
+  pub sched: u64,
+  pub cmd: String,
 }
 
 #[derive(Default)]
 pub struct PROCTAB {
-  procfs: Option<std::fs::ReadDir>,
-  taskdir: Option<std::fs::ReadDir>,
-  taskdir_user: i64,
-  finder: Option<fn(&mut PROCTAB) -> Option<PROCT>>,
-  reader: Option<fn(&PROCTAB, &mut PROCT) -> Option<()>>,
-  taskfinder: Option<fn(&PROCTAB, &PROCT, &PROCT, &String) -> i32>,
-  taskreader: Option<fn(&PROCTAB, &PROCT, &PROCT, &String) -> Option<PROCT>>,
-  pids: Vec<i32>,
-  uids: Vec<i32>,
-  nuid: i32,
-  i: i32,
-  flags: u64,
-  u: u32,
-  path: std::path::PathBuf,
-  pathlen: u32,
+  pub procfs: Option<std::fs::ReadDir>,
+  pub taskdir: Option<std::fs::ReadDir>,
+  pub taskdir_user: i64,
+  pub finder: Option<fn(&mut PROCTAB) -> Option<PROCT>>,
+  pub reader: Option<fn(&PROCTAB, &mut PROCT) -> Option<()>>,
+  pub taskfinder: Option<fn(&PROCTAB, &PROCT, &PROCT, &String) -> i32>,
+  pub taskreader: Option<fn(&PROCTAB, &PROCT, &PROCT, &String) -> Option<PROCT>>,
+  pub pids: Vec<i32>,
+  pub uids: Vec<i32>,
+  pub nuid: i32,
+  pub i: i32,
+  pub flags: u64,
+  pub u: u32,
+  pub path: std::path::PathBuf,
+  pub pathlen: u32,
 }
 
 pub fn openproc(
@@ -117,6 +118,7 @@ pub fn openproc(
   uidlist: Option<Vec<uid_t>>,
 ) -> Result<PROCTAB, String> {
   let mut pt = PROCTAB {
+    flags: PROC_FILLSTAT,
     ..Default::default()
   };
 
@@ -134,6 +136,7 @@ pub fn openproc(
       Err(_) => return Err(String::from("Fatal error: failed to open /proc dir.")),
     };
     pt.finder = Some(simple_nextpid);
+    log::trace!("assign finder to PROCTAB");
   }
   pt.flags = flags;
 
@@ -141,19 +144,32 @@ pub fn openproc(
 }
 
 pub fn readproc(pt: &mut PROCTAB) -> Option<PROCT> {
+  log::trace!("readproc()");
+
   loop {
     let mut p = match pt.finder.unwrap()(pt) {
       Some(_p) => _p,
-      None => return None,
+      None => {
+        log::trace!("failed to find next pid");
+        return None;
+      },
     };
     match pt.reader.unwrap()(&pt, &mut p) {
-      Some(()) => return Some(p),
-      None => continue,
+      Some(()) => {
+        log::trace!("success read proc: {:?}", p);
+        return Some(p);
+      },
+      None => {
+        log::trace!("failed pt.reader()");
+        continue;
+      },
     }
   }
 }
 
 pub fn want_this_proc(p: &PROCT, parser: &argparser::PsParser) -> bool {
+  log::trace!("want_this_proc(): {:?}", p);
+
   let mut proc_is_wanted = false;
   if !parser.all_process {
     // use table for -a a d g x
@@ -174,6 +190,7 @@ pub fn want_this_proc(p: &PROCT, parser: &argparser::PsParser) -> bool {
 
 // return None if the proc file does no more exist.
 fn simple_readproc(pt: &PROCTAB, p: &mut PROCT) -> Option<()> {
+  log::trace!("pt.path: {:?}", pt.path);
   let sb = match std::fs::metadata(&pt.path) {
     Ok(meta) => meta,
     Err(_) => return None,
@@ -182,51 +199,63 @@ fn simple_readproc(pt: &PROCTAB, p: &mut PROCT) -> Option<()> {
   p.euid = sb.uid();
   p.egid = sb.gid();
 
-  if pt.flags & PROC_FILLSTAT != 1 {
+  if pt.flags & PROC_FILLSTAT != 0 {
+    let statpath = path::PathBuf::from(format!("{}/stat", pt.path.to_str().unwrap()));
+    let mut statfile = std::fs::File::open(statpath.to_str().unwrap()).unwrap();
+    let mut stat = String::new();
+    match statfile.read_to_string(&mut stat) {
+      Ok(n) => {
+        log::trace!("read stat: {} bytes", n);
+      },
+      Err(_) => log::error!("failed to read stat"),
+    };
+    match stat2proc(&stat, p) {
+      Ok(()) => log::trace!("success stat2proc()"),
+      Err(_msg) => return None,
+    }
+  };
+
+  if pt.flags & PROC_FILLMEM != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLMEM != 1 {
+  if pt.flags & PROC_FILLMEM != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLMEM != 1 {
+  if pt.flags & PROC_FILLUSER != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLUSER != 1 {
+  if pt.flags & PROC_FILLGRP != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLGRP != 1 {
+  if pt.flags & PROC_FILLENV != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLENV != 1 {
+  if (pt.flags & PROC_FILLARG != 0) && (pt.flags & PROC_FILLCOM != 0) {
     unimplemented!();
   };
 
-  if (pt.flags & PROC_FILLARG != 1) && (pt.flags & PROC_FILLCOM != 1) {
+  if pt.flags & PROC_FILLCGROUP != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLCGROUP != 1 {
+  if pt.flags & PROC_FILLCOM != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLCOM != 1 {
+  if pt.flags & PROC_FILLNS != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLNS != 1 {
+  if pt.flags & PROC_FILLSYSTEMD != 0 {
     unimplemented!();
   };
 
-  if pt.flags & PROC_FILLSYSTEMD != 1 {
-    unimplemented!();
-  };
-
-  if pt.flags & PROC_FILL_LXC != 1 {
+  if pt.flags & PROC_FILL_LXC != 0 {
     unimplemented!();
   };
 
@@ -246,16 +275,20 @@ fn simple_nextpid(pt: &mut PROCTAB) -> Option<PROCT> {
       Some(_d) => _d.unwrap(),
       None => return None,
     };
-    match d.file_name().to_str().unwrap()[0..=0].parse::<i32>() {
+    match d.file_name().to_str().unwrap().parse::<i32>() {
       Ok(n) => {
+        log::trace!("success parse proc name: {:?}", n);
+        pt.path = path::PathBuf::from(String::from(format!("/proc/{}", d.file_name().to_str().unwrap())));
         return Some(PROCT {
           tgid: n,
           tid: n,
-          pathname: String::from(format!("/proc/{}", d.file_name().to_str().unwrap())),
           ..Default::default()
         })
       }
-      Err(_) => continue,
+      Err(_) => {
+        log::trace!("failed to parse proc name: {:?}", d.file_name().to_str().unwrap());
+        continue;
+      },
     };
   }
   unreachable!();
@@ -266,16 +299,58 @@ fn simple_readtask(pt: &PROCTAB, p: &PROCT, t: &PROCT, path: &String) -> Option<
   unimplemented!();
 }
 
+pub fn i2u64(n: i64) -> u64 {
+  if n > 0 {
+    n.try_into().unwrap()
+  } else {
+    (-n).try_into().unwrap()
+  }
+}
+pub fn i2u32(n: i32) -> u32 {
+  if n > 0 {
+    n.try_into().unwrap()
+  } else {
+    (-n).try_into().unwrap()
+  }
+}
+
 pub fn stat2proc(s: &String, p: &mut PROCT) -> Result<(), String> {
   /* sample stat output is below:
     $ cat /proc/$$/stat
     1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107 9649 0 0 4 0 4 5 20 0 1 0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0 0 65536 3670020 1266777851 1 0 0 17 3 0 0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791 140735920754666 0
   */
+  log::trace!("{:?}", s);
+  //macro_rules! i2u {
+  //  ($x:expr, i64) => {
+  //    if $x < 0 {
+  //      (-$x).parse::<u64>().unwrap()
+  //    } else {
+  //      $x.parse::u64().unwrap()
+  //    }
+  //  };
+  //  ($x:expr, i32) => {
+  //    if $x < 0 {
+  //      (-$x).parse::<u32>().unwrap()
+  //    } else {
+  //      $x.parse::u32().unwrap()
+  //    }
+  //  };
+  //}
+  scan_fmt!("1406 (sd-pam) S 1405 1405 1405 0 -1 1077936448 48 0 0 0 0 0 0 0 20 0 1 0 910 173793280 845 18446744073709551615 1 1 0 0 0 0 0 4096 0 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0\n", 
+  "{} ({}) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
+    i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, u64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  ).unwrap();
   let (
     pid, com, state, ppid, pgrp, sess, ttynr, tpgid, flags, minflt, cminflt, majflt, cmajflt, utime, stime, cutime, cstime, prio, nice, num_threads, itrealvalue, starttime, vsize, rss, rsslim, startcode, endcode, startstack, kstkesp, kstkeip, signal, blocked, sigignore, sigcatch, wchan, nswap, cnswap, exit_signal, processor, rt_prio,policy, delayacct_blkio_ticks, guest_time, cguest_time, start_data, end_data, start_brk, arg_start, arg_end, env_start,env_end, exit_code,
-  ) = scan_fmt!(s, "{} ({}) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-    u64, String, String, u32, u32, u32, u32, u32, u64, u64,u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64
-  ).unwrap();
+  ) = if let Ok(r) = scan_fmt!(s, "{} ({}) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
+    i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  ) {
+    r
+  } else {
+    scan_fmt!(s, "{} (({})) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
+      i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+    ).unwrap()
+  };
 
   p.state = match state.as_str() {
     "R" => ProcState::RUNNING,
@@ -292,38 +367,38 @@ pub fn stat2proc(s: &String, p: &mut PROCT) -> Result<(), String> {
     "P" => ProcState::PARKED,
     _ => ProcState::UNKNOWN,
   };
-  p.ppid = ppid;
-  p.pgrp = pgrp;
-  p.session = sess;
-  p.tty = ttynr;
-  p.tpgid = tpgid;
-  p.flags = flags;
-  p.min_flt = minflt;
-  p.cmin_flt = cminflt;
-  p.maj_flt = majflt;
-  p.cmaj_flt = cmajflt;
-  p.utime = utime;
-  p.stime = stime;
-  p.cutime = cutime;
-  p.cstime = cstime;
-  p.priority = prio;
-  p.nice = nice;
-  p.nlwp = num_threads;
-  p.alarm = itrealvalue;
-  p.start_time = stime;
-  p.vsize = vsize;
-  p.rss = rss;
+  p.ppid = i2u32(ppid);
+  p.pgrp = i2u32(pgrp);
+  p.session = i2u32(sess);
+  p.tty = i2u32(ttynr);
+  p.tpgid = i2u32(tpgid);
+  p.flags = i2u64(flags);
+  p.min_flt = i2u64(minflt);
+  p.cmin_flt = i2u64(cminflt);
+  p.maj_flt = i2u64(majflt);
+  p.cmaj_flt = i2u64(cmajflt);
+  p.utime = i2u64(utime);
+  p.stime = i2u64(stime);
+  p.cutime = i2u64(cutime);
+  p.cstime = i2u64(cstime);
+  p.priority = i2u64(prio);
+  p.nice = i2u64(nice);
+  p.nlwp = i2u64(num_threads);
+  p.alarm = i2u64(itrealvalue);
+  p.start_time = i2u64(stime);
+  p.vsize = i2u64(vsize);
+  p.rss = i2u64(rss);
   p.rss_rlim = rsslim;
-  p.start_code = startcode;
-  p.end_code = endcode;
-  p.start_stack = startstack;
-  p.kstk_esp = kstkesp;
-  p.kstk_eip = kstkeip;
-  p.wchan = wchan;
-  p.exit_signal = exit_signal;
-  p.processor = processor;
-  p.rtprio = rt_prio;
-  p.sched = policy;
+  p.start_code = i2u64(startcode);
+  p.end_code = i2u64(endcode);
+  p.start_stack = i2u64(startstack);
+  p.kstk_esp = i2u64(kstkesp);
+  p.kstk_eip = i2u64(kstkeip);
+  p.wchan = i2u64(wchan);
+  p.exit_signal = i2u64(exit_signal);
+  p.processor = i2u64(processor);
+  p.rtprio = i2u64(rt_prio);
+  p.sched = i2u64(policy);
   p.cmd = com;
   Ok(())
 }

@@ -8,7 +8,7 @@ pub mod readproc;
 use simple_logger::SimpleLogger;
 
 #[derive(Debug)]
-struct Ps {
+pub struct Ps {
   parser: argparser::PsParser,
 }
 
@@ -19,12 +19,18 @@ impl Ps {
     }
   }
   pub fn run(&mut self) -> i32 {
+    let selection_list = self.parser.parse().unwrap();
+    self.parser.selection_list = selection_list;
     self.arg_check_conflicts();
 
     log::trace!("===== ps output follows ====");
     self.init_output();
     self.lists_and_needs();
-    display::simple_spew();
+
+    match display::simple_spew(&self.parser) {
+      Ok(()) => log::trace!("simple_spew finish"),
+      Err(msg) => println!("{}", msg),
+    }
     return 0;
   }
 
