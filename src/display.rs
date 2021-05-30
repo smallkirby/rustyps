@@ -3,7 +3,7 @@ use crate::readproc;
 
 pub fn simple_spew(parser: &argparser::PsParser) -> Result<(), String> {
   let mut pt = match readproc::openproc(readproc::PROC_FILLSTAT, None, None) {
-    Ok(_pt) => _pt, 
+    Ok(_pt) => _pt,
     Err(msg) => return Err(msg),
   };
   log::trace!("simple_spew: opened PROCTAB");
@@ -23,9 +23,8 @@ pub fn simple_spew(parser: &argparser::PsParser) -> Result<(), String> {
   Ok(())
 }
 
-// XXX 
+// XXX
 pub fn show_one_proc(p: &readproc::PROCT) {
   log::trace!("show_one_proc()");
   println!("{}: {}", p.cmd, p.tgid);
 }
-

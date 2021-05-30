@@ -76,11 +76,12 @@ impl PsParser {
 
   // main function of parser
   // replacement of 'arg_parse()
-  pub fn parse(&mut self) -> Result<Vec<SelectionNode>, String> {
+  pub fn parse(&mut self) -> Result<(), String> {
     match self.arg_parse() {
       Ok(list) => {
-        Ok(list)
-      },
+        self.selection_list = list;
+        Ok(())
+      }
       Err(msg) => Err(msg),
     }
   }
@@ -311,25 +312,25 @@ pub fn parse_pid(vals: &Vec<String>) -> Option<Vec<SelectionNode>> {
 mod tests {
   #[test]
   fn parser_gnu_pid() {
-    let parser0 = super::PsParser {
+    let mut parser0 = super::PsParser {
       args: vec![String::from("me"), String::from("--pid=33")],
       curargix: 0,
       thread_flags: vec![],
       ..Default::default()
     };
-    let parser1 = super::PsParser {
+    let mut parser1 = super::PsParser {
       args: vec![String::from("me"), String::from("--pid=33,44,55")],
       curargix: 0,
       thread_flags: vec![],
       ..Default::default()
     };
-    let parser2 = super::PsParser {
+    let mut parser2 = super::PsParser {
       args: vec![String::from("me"), String::from("--pid:33,44,55")],
       curargix: 0,
       thread_flags: vec![],
       ..Default::default()
     };
-    let parser3 = super::PsParser {
+    let mut parser3 = super::PsParser {
       args: vec![
         String::from("me"),
         String::from("--pid"),
@@ -347,9 +348,13 @@ mod tests {
       super::SelectionNode::PID(super::PidSelection { pid: vec![44] }),
       super::SelectionNode::PID(super::PidSelection { pid: vec![55] }),
     ];
-    assert_eq!(parser0.parse().unwrap(), b0);
-    assert_eq!(parser1.parse().unwrap(), b1);
-    assert_eq!(parser2.parse().unwrap(), b1);
-    assert_eq!(parser3.parse().unwrap(), b1);
+    parser0.parse().unwrap();
+    assert_eq!(parser0.selection_list, b0);
+    parser1.parse().unwrap();
+    assert_eq!(parser1.selection_list, b1);
+    parser2.parse().unwrap();
+    assert_eq!(parser2.selection_list, b1);
+    parser3.parse().unwrap();
+    assert_eq!(parser3.selection_list, b1);
   }
 }

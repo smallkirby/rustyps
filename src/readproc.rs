@@ -1,8 +1,8 @@
 use std::convert::TryInto;
+use std::io::Read;
 use std::os;
 use std::os::unix::fs::MetadataExt;
 use std::path;
-use std::io::Read;
 
 use crate::argparser;
 
@@ -152,17 +152,17 @@ pub fn readproc(pt: &mut PROCTAB) -> Option<PROCT> {
       None => {
         log::trace!("failed to find next pid");
         return None;
-      },
+      }
     };
     match pt.reader.unwrap()(&pt, &mut p) {
       Some(()) => {
         log::trace!("success read proc: {:?}", p);
         return Some(p);
-      },
+      }
       None => {
         log::trace!("failed pt.reader()");
         continue;
-      },
+      }
     }
   }
 }
@@ -206,7 +206,7 @@ fn simple_readproc(pt: &PROCTAB, p: &mut PROCT) -> Option<()> {
     match statfile.read_to_string(&mut stat) {
       Ok(n) => {
         log::trace!("read stat: {} bytes", n);
-      },
+      }
       Err(_) => log::error!("failed to read stat"),
     };
     match stat2proc(&stat, p) {
@@ -278,17 +278,23 @@ fn simple_nextpid(pt: &mut PROCTAB) -> Option<PROCT> {
     match d.file_name().to_str().unwrap().parse::<i32>() {
       Ok(n) => {
         log::trace!("success parse proc name: {:?}", n);
-        pt.path = path::PathBuf::from(String::from(format!("/proc/{}", d.file_name().to_str().unwrap())));
+        pt.path = path::PathBuf::from(String::from(format!(
+          "/proc/{}",
+          d.file_name().to_str().unwrap()
+        )));
         return Some(PROCT {
           tgid: n,
           tid: n,
           ..Default::default()
-        })
+        });
       }
       Err(_) => {
-        log::trace!("failed to parse proc name: {:?}", d.file_name().to_str().unwrap());
+        log::trace!(
+          "failed to parse proc name: {:?}",
+          d.file_name().to_str().unwrap()
+        );
         continue;
-      },
+      }
     };
   }
   unreachable!();

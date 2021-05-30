@@ -19,8 +19,10 @@ impl Ps {
     }
   }
   pub fn run(&mut self) -> i32 {
-    let selection_list = self.parser.parse().unwrap();
-    self.parser.selection_list = selection_list;
+    match self.parser.parse() {
+      Ok(()) => log::trace!("success parse"),
+      Err(msg) => println!("Err: {}", msg),
+    }
     self.arg_check_conflicts();
 
     log::trace!("===== ps output follows ====");
