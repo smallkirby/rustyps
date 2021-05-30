@@ -5,6 +5,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path;
 
 use crate::argparser;
+use crate::helper;
 
 type pid_t = i32;
 type uid_t = i32;
@@ -58,11 +59,11 @@ pub struct PROCT {
   pub euid: u32, // effective uid
   pub egid: u32, // effective gid
   pub state: ProcState,
-  pub ppid: u32,
-  pub pgrp: u32,
-  pub session: u32,
-  pub tty: u32,
-  pub tpgid: u32,
+  pub ppid: i32,
+  pub pgrp: i32,
+  pub session: i32,
+  pub tty: i32,
+  pub tpgid: i32,
   pub flags: u64,
   pub min_flt: u64,
   pub cmin_flt: u64,
@@ -72,13 +73,13 @@ pub struct PROCT {
   pub stime: u64,
   pub cutime: u64,
   pub cstime: u64,
-  pub priority: u64,
-  pub nice: u64,
-  pub nlwp: u64,
-  pub alarm: u64,
+  pub priority: i64,
+  pub nice: i64,
+  pub nlwp: i32,
+  pub alarm: i64,
   pub start_time: u64,
   pub vsize: u64,
-  pub rss: u64,
+  pub rss: i64,
   pub rss_rlim: u64,
   pub start_code: u64,
   pub end_code: u64,
@@ -86,8 +87,8 @@ pub struct PROCT {
   pub kstk_esp: u64,
   pub kstk_eip: u64,
   pub wchan: u64,
-  pub exit_signal: u64,
-  pub processor: u64,
+  pub exit_signal: i32,
+  pub processor: i32,
   pub rtprio: u64,
   pub sched: u64,
   pub cmd: String,
@@ -321,41 +322,34 @@ pub fn i2u32(n: i32) -> u32 {
 }
 
 pub fn stat2proc(s: &String, p: &mut PROCT) -> Result<(), String> {
-  /* sample stat output is below:
-    $ cat /proc/$$/stat
-    1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107 9649 0 0 4 0 4 5 20 0 1 0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0 0 65536 3670020 1266777851 1 0 0 17 3 0 0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791 140735920754666 0
-  */
   log::trace!("{:?}", s);
-  //macro_rules! i2u {
-  //  ($x:expr, i64) => {
-  //    if $x < 0 {
-  //      (-$x).parse::<u64>().unwrap()
-  //    } else {
-  //      $x.parse::u64().unwrap()
-  //    }
-  //  };
-  //  ($x:expr, i32) => {
-  //    if $x < 0 {
-  //      (-$x).parse::<u32>().unwrap()
-  //    } else {
-  //      $x.parse::u32().unwrap()
-  //    }
-  //  };
-  //}
-  scan_fmt!("1406 (sd-pam) S 1405 1405 1405 0 -1 1077936448 48 0 0 0 0 0 0 0 20 0 1 0 910 173793280 845 18446744073709551615 1 1 0 0 0 0 0 4096 0 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0\n", 
-  "{} ({}) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
-    i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, u64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
-  ).unwrap();
+  let com_start = s.find("(").unwrap();
+  let com_end = *helper::strpbrk_all(&s, ")").last().unwrap();
+  let s_after_com_ix = com_end + 2;
+
+  // read `com` first, cuz scan_fmt! does bad for example when parsing `((tmux: client))`.
+  let com = String::from(&s[com_start + 1..com_end]);
+
+  #[rustfmt::skip]
   let (
-    pid, com, state, ppid, pgrp, sess, ttynr, tpgid, flags, minflt, cminflt, majflt, cmajflt, utime, stime, cutime, cstime, prio, nice, num_threads, itrealvalue, starttime, vsize, rss, rsslim, startcode, endcode, startstack, kstkesp, kstkeip, signal, blocked, sigignore, sigcatch, wchan, nswap, cnswap, exit_signal, processor, rt_prio,policy, delayacct_blkio_ticks, guest_time, cguest_time, start_data, end_data, start_brk, arg_start, arg_end, env_start,env_end, exit_code,
-  ) = if let Ok(r) = scan_fmt!(s, "{} ({}) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
-    i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+    state, ppid, pgrp, sess, ttynr, tpgid, flags, minflt, 
+    cminflt, majflt, cmajflt, utime, stime, cutime, cstime, prio, nice, num_threads, 
+    itrealvalue, _starttime, vsize, rss, rsslim, startcode, endcode, startstack, kstkesp, kstkeip, 
+    _signal, _blocked, _sigignore, _sigcatch, wchan, _nswap, _cnswap, exit_signal, processor, rt_prio, 
+    policy, _delayacct_blkio_ticks, _guest_time, _cguest_time, _start_data, _end_data, _start_brk, _arg_start, _arg_end, _env_start, 
+    _env_end, _exit_code,
+  ) = if let Ok(r) = scan_fmt!(&s[s_after_com_ix..], 
+    "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
+    String, i32, i32, i32, i32, i32, u64, u64, 
+    u64, u64, u64, u64, u64, u64, u64, i64, i64, i32, 
+    i64, u64, u64, i64, u64, u64, u64, u64, u64, u64, 
+    i64, i64, i64, i64, u64, i64, i64, i32, i32, u64, 
+    u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, 
+    i64, i64
   ) {
     r
   } else {
-    scan_fmt!(s, "{} (({})) {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n",
-      i64, String, String, i32, i32, i32, i32, i32, i64, i64,i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, u64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
-    ).unwrap()
+    return Err(String::from("Parse error while reading stat"));
   };
 
   p.state = match state.as_str() {
@@ -373,38 +367,38 @@ pub fn stat2proc(s: &String, p: &mut PROCT) -> Result<(), String> {
     "P" => ProcState::PARKED,
     _ => ProcState::UNKNOWN,
   };
-  p.ppid = i2u32(ppid);
-  p.pgrp = i2u32(pgrp);
-  p.session = i2u32(sess);
-  p.tty = i2u32(ttynr);
-  p.tpgid = i2u32(tpgid);
-  p.flags = i2u64(flags);
-  p.min_flt = i2u64(minflt);
-  p.cmin_flt = i2u64(cminflt);
-  p.maj_flt = i2u64(majflt);
-  p.cmaj_flt = i2u64(cmajflt);
-  p.utime = i2u64(utime);
-  p.stime = i2u64(stime);
-  p.cutime = i2u64(cutime);
-  p.cstime = i2u64(cstime);
-  p.priority = i2u64(prio);
-  p.nice = i2u64(nice);
-  p.nlwp = i2u64(num_threads);
-  p.alarm = i2u64(itrealvalue);
-  p.start_time = i2u64(stime);
-  p.vsize = i2u64(vsize);
-  p.rss = i2u64(rss);
+  p.ppid = ppid;
+  p.pgrp = pgrp;
+  p.session = sess;
+  p.tty = ttynr;
+  p.tpgid = tpgid;
+  p.flags = flags;
+  p.min_flt = minflt;
+  p.cmin_flt = cminflt;
+  p.maj_flt = majflt;
+  p.cmaj_flt = cmajflt;
+  p.utime = utime;
+  p.stime = stime;
+  p.cutime = cutime;
+  p.cstime = cstime;
+  p.priority = prio;
+  p.nice = nice;
+  p.nlwp = num_threads;
+  p.alarm = itrealvalue;
+  p.start_time = stime;
+  p.vsize = vsize;
+  p.rss = rss;
   p.rss_rlim = rsslim;
-  p.start_code = i2u64(startcode);
-  p.end_code = i2u64(endcode);
-  p.start_stack = i2u64(startstack);
-  p.kstk_esp = i2u64(kstkesp);
-  p.kstk_eip = i2u64(kstkeip);
-  p.wchan = i2u64(wchan);
-  p.exit_signal = i2u64(exit_signal);
-  p.processor = i2u64(processor);
-  p.rtprio = i2u64(rt_prio);
-  p.sched = i2u64(policy);
+  p.start_code = startcode;
+  p.end_code = endcode;
+  p.start_stack = startstack;
+  p.kstk_esp = kstkesp;
+  p.kstk_eip = kstkeip;
+  p.wchan = wchan;
+  p.exit_signal = exit_signal;
+  p.processor = processor;
+  p.rtprio = rt_prio;
+  p.sched = policy;
   p.cmd = com;
   Ok(())
 }
@@ -464,14 +458,52 @@ mod tests {
   }
 
   #[test]
-  fn test_stat2proc() {
-    let stat = String::from("1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107 9649 0 0 4 0 4 5 20 0 1 0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0 0 65536 3670020 1266777851 1 0 0 17 3 0 0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791 140735920754666 0");
+  fn test_stat2proc_1() {
+    /*
+    1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107
+    9649 0 0 4 0 4 5 20 0 1
+    0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0
+    0 65536 3670020 1266777851 1 0 0 17 3 0
+    0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791
+    140735920754666 0
+    */
+    let stat = String::from("1504081 (bash) S 3423 1504081 1504081 34984 1504155 4194304 2107 9649 0 0 4 0 4 5 20 0 1 0 76785102 13455360 1554 18446744073709551615 94220315791360 94220316514053 140735920746448 0 0 0 65536 3670020 1266777851 1 0 0 17 3 0 0 0 0 0 94220316744944 94220316792324 94220326436864 140735920752777 140735920752791 140735920752791 140735920754666 0\n");
     let mut p = super::PROCT {
       ..Default::default()
     };
     super::stat2proc(&stat, &mut p).unwrap();
     assert_eq!(p.cmd, "bash");
     assert_eq!(p.session, 1504081);
+  }
+
+  #[test]
+  pub fn stat2proc_2() {
+    let stat = String::from("1406 ((sd-pam)) S 1405 1405 1405 0 -1 1077936448 48 0 0 0 0 0 0 0 20 0 1 0 910 173793280 845 18446744073709551615 1 1 0 0 0 0 0 4096 0 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0\n");
+    let mut p = super::PROCT {
+      ..Default::default()
+    };
+    super::stat2proc(&stat, &mut p).unwrap();
+    assert_eq!(p.cmd, "(sd-pam)");
+    assert_eq!(p.session, 1405);
+  }
+
+  #[test]
+  pub fn stat2proc_3() {
+    /*
+    3421 (tmux: client) S 3410 3421 3421 34816 3421 4194304 259
+    13 8 0 0 0 0 0 20 0 1
+    0 3806 11034624 837 18446744073709551615 94632459423744 94632459845269 140723971592480 0 0
+    0 0 528386 134433281 1 0 0 17 5 0
+    0 0 0 0 94632459996432 94632460044040 94632480497664 140723971594440 140723971594445 140723971594445
+    140723971596266 0\n
+    */
+    let stat = String::from("3421 (tmux: client) S 3410 3421 3421 34816 3421 4194304 259 13 8 0 0 0 0 0 20 0 1 0 3806 11034624 837 18446744073709551615 94632459423744 94632459845269 140723971592480 0 0 0 0 528386 134433281 1 0 0 17 5 0 0 0 0 0 94632459996432 94632460044040 94632480497664 140723971594440 140723971594445 140723971594445 140723971596266 0\n");
+    let mut p = super::PROCT {
+      ..Default::default()
+    };
+    super::stat2proc(&stat, &mut p).unwrap();
+    assert_eq!(p.cmd, "tmux: client");
+    assert_eq!(p.session, 3421);
   }
 
   #[test]

@@ -3,6 +3,7 @@ extern crate scan_fmt;
 
 pub mod argparser;
 pub mod display;
+pub mod helper;
 pub mod readproc;
 
 use simple_logger::SimpleLogger;
@@ -49,7 +50,7 @@ impl Ps {
 
 fn main() {
   SimpleLogger::new()
-    .with_level(log::LevelFilter::Trace)
+    .with_level(log::LevelFilter::Warn)
     .init()
     .unwrap();
 
